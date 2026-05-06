@@ -37,4 +37,20 @@ func DeclareAndBind(
 	key string,
 	queueType SimpleQueueType,
 ) (*amqp.Channel, amqp.Queue, error) {
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, amqp.Queue{}, fmt.Errorf("cant create channel %w", err)
+	}
+
+	q, err := ch.QueueDeclare(queueName, queueType == Durable, queueType == Transient, queueType == Transient, false, nil)
+	if err != nil {
+		ch.Close()
+		return nil, amqp.Queue{}, fmt.Errorf("cant create queue %w", err)
+	}
+	err = ch.QueueBind(queueName, key, exchange, false, nil)
+	if err != nil {
+		ch.Close()
+		return nil, amqp.Queue{}, fmt.Errorf("cant bind queue to exchang %w", err)
+	}
+	return ch, q, nil
 }
